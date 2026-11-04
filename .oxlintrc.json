@@ -1,0 +1,21 @@
+{
+  "env": {
+    "browser": true,
+    "es2024": true,
+    "serviceworker": true,
+    "worker": true
+  },
+  "globals": {
+    "importScripts": "readonly",
+    "registration": "readonly",
+    "clients": "readonly",
+    "BareMux": "readonly",
+    "Notify": "readonly",
+    "marked": "readonly",
+    "$scramjetLoadWorker": "readonly",
+    "$scramjetLoadController": "readonly",
+    "$scramjetVersion": "readonly",
+    "ScramjetServiceWorker": "readonly",
+    "ScramjetController": "readonly"
+  }
+}

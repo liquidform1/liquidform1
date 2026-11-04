@@ -1,0 +1,34 @@
+{
+  "summary": "Frontend-only verification of 'all games go through proxy' in Flint. Flow tested: /?cloaked=true (root auto-launch opens about:blank popup + redirects top window to classroom.google.com, so ?cloaked=true is required for headless testing) -> window.html -> nt.html -> G4m3s tile -> pages/g.html grid -> game tiles. PROXYING ITSELF WORKS: every game clicked produced iframe src = '/scramjet/<encoded>' and a matching /scramjet/ frame (jsdelivr, raw.githack, archive.org); the docs.google.com request form correctly loads direct (unproxied). Search filter, overlay open, Close button (overlay->none, iframe removed) all pass. HOWEVER the actual game CONTENT now fails for the 249 cdn.jsdelivr.net games (render as text/plain, 0 scripts, blank black area) and the 18 raw.githack.com games require an extra 'One more step' interstitial click. archive.org (70 games) works and is fully playable (DOOM rendered, canvas present).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Click jsdelivr-hosted game (Angry Birds, Baldi's Basics, ~249 games)", "issue": "CRITICAL: iframe is correctly proxied (/scramjet/https%3A%2F%2Fcdn.jsdelivr.net%2F...) but cdn.jsdelivr.net/gh/ serves the game HTML as 'content-type: text/plain; charset=utf-8' with 'x-content-type-options: nosniff'. Inside the proxied iframe document.contentType == 'text/plain', 0 <script>, 0 <canvas>, body.innerText is the raw HTML markup -> game area is a blank black rectangle. The old fetch()+document.write path masked this; iframe.src cannot. ~249/338 games are now unplayable.", "affected_selectors": ["#iframeContainer iframe", ".shortcut[data-name=\"Angry Birds\"]"]},
+      {"flow": "Click raw.githack.com game (2048, Chrome Dino, Hextris, Hollow Knight, Deltarune, ~18 games)", "issue": "HIGH: raw.githack.com returns HTTP 403 with an 'External Content Notice / One more step' interstitial (rawgit.hack) instead of the game. User must click 'Open the page' inside the proxied frame; after that click the game DOES load and play (t-rex-runner: title 'chrome easter egg: t-rex runner', canvas present). Adding any query string bypasses it server-side (curl 'https://raw.githack.com/gabrielecirulli/2048/master/index.html?x=1' -> 200 text/html), so appending a cache-buster query param would remove the extra click.", "affected_selectors": ["#iframeContainer iframe"]},
+      {"flow": "Root URL (/) load in automation/headless", "issue": "MEDIUM/INFO: index.html attemptAutoLaunch() opens about:blank and then does window.location.replace('https://classroom.google.com') on the original tab. In a headless/popup-restricted context the top window ends up on the Google sign-in page and the app is unreachable unless '?cloaked=true' is used. Worth confirming the popup-blocked fallback UI actually appears for real users.", "affected_selectors": ["#init-overlay", "#action-buttons"]}
+    ],
+    "design_issues": [
+      {"screen": "Game overlay (g.html #iframeOverlay)", "issues": ["When the proxied page fails/renders as text, the overlay shows a large empty black area with no error/fallback message or retry - user cannot tell the game failed vs. is still loading (loader is hidden on iframe onload)."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "FIX (critical): jsdelivr games render as text/plain in the proxied iframe. Options: (a) fetch(flintProxyEncode(src)) and inject the HTML into the iframe via document.write/srcdoc while adding <base href=\"<proxied directory URL>\"> so relative assets still route through Scramjet, or (b) create a Blob with type 'text/html' from the proxy-fetched text and set iframe.src to the blob URL plus rewritten base, or (c) migrate the 249 jsdelivr URLs to a host that returns text/html (statically.io also returns text/plain - verified; raw.githack.com does return text/html).",
+    "FIX (high): append a query param (e.g. '?flint=1') to raw.githack.com game URLs, or auto-follow the interstitial, so the 18 githack games load in one click instead of showing 'One more step'.",
+    "ADD: error/fallback state in the game overlay when the proxied iframe yields no runnable content (timeout + message + 'Open in new tab'/retry)."
+  ],
+  "critical_code_review_comments": [
+    "g.html: window.parent.flintProxyEncode is only defined after getSharedScramjet() runs in window.html; if a user opens /pages/g.html directly or clicks a game before Scramjet init, encode returns null and the game silently loads the DIRECT (blockable) URL with no warning. Add a guard/wait or a visible 'pr0xy not ready' state.",
+    "g.html click handler assumes iframe.onload means success; add a content sanity check (contentType/documentElement) to surface text/plain or interstitial responses.",
+    "g.html game tiles/controls have no data-testid attributes; tests must rely on .shortcut[data-name] and #closeBtn/#searchInput ids."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (static site, no backend)", "frontend": "Proxying/URL-encoding checks: 100% pass (6/6). Actual game playability: ~21% (only the 70 archive.org games + 1 form work; 249 jsdelivr blank, 18 githack need extra click)."},
+  "seed_data_creation": "None",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "N/A - no auth in app; /app/memory/test_credentials.md not needed",
+  "context_for_next_testing_agent": "Use https://<base>/?cloaked=true to bypass the auto-launch popup/classroom redirect. Dismiss the welcome modal inside the nt.html frame ('Continue to browser'), click text 'G4m3s' in nt.html, then g.html frame: #searchInput to filter, click '.shortcut[data-name=\"<name>\"]', read src via '#iframeContainer iframe', close via '#closeBtn'. Verify game actually runs by evaluating document.contentType / canvas count inside the '/scramjet/' frame - src containing '/scramjet/' alone is NOT proof the game works. archive.org games (e.g. DOOM) are the known-good baseline.",
+  "rca_of_the_issue": "cdn.jsdelivr.net/gh/*.html is served with 'Content-Type: text/plain' + 'X-Content-Type-Options: nosniff' (verified by curl), so a browser iframe navigated to that URL (even proxied through Scramjet, which preserves the upstream content-type) displays the markup as plain text and never executes the game's scripts. The previous fetch()+document.write implementation bypassed the content-type. Separately, raw.githack.com now gates path-only requests behind a 403 'External Content Notice' interstitial (a query string bypasses it), which the new iframe.src approach surfaces to the user."
+}
