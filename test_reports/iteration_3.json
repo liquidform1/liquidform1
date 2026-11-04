@@ -1,0 +1,29 @@
+{
+  "summary": "Frontend-only regression + new-feature testing for Flint static site. All 7 requested checks PASS: Movies grid (40 cards, 40/40 posters loaded, search filter works, anchors with correct watch.plex.tv hrefs, inline postMessage/navigate wiring present); NT tiles order + M0v13s tile navigates to movies.html; leetspeak on g.html and a.html titles/headings/placeholders; Discord absent from nt.html body; welcome modal text updated; proxy engine regression (window.html reload) still exposes $scramjetLoadController as function, address-bar present, 1 SW registration, no 'does not allow Service Workers' text; root '/' returns 200 with title 'Flint'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Note (out-of-scope for this task, but observed): a.html '4pps' grid still contains a Discord app tile. Review request only required Discord removal from nt.html (which passes). If full removal was intended across the site, main agent should also remove Discord entry from /app/frontend/public/data/apps.json."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "test_credentials": "N/A - public static site",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "movies.html openMovie is defined inside an inline <script type=module> so it is not on window (window.openMovie === undefined) but postMessage({type:'navigate',...}) and window.parent wiring are present in inline scripts — this is acceptable per spec. Welcome modal on nt.html intercepts pointer events; must dismiss via 'Continue to browser' link before clicking tiles. g.html/a.html grid children counted 0 with generic selectors but visual + posters confirm they are populated (Chess.com, Discord, Netflix, Scratch, Soundboard, Soundcloud, Spotify, TikTok, Youtube on 4pps).",
+  "test_results_detail": {
+    "movies_page": {"heading":"M0v13s","cards":40,"posters_loaded":"40/40","first_href":"https://watch.plex.tv/movie/the-shawshank-redemption","first_tag":"A","postMessage_wiring":true,"search_matrix":"only 'The Matrix' visible"},
+    "nt_page": {"labels":["G4m3s","M0v13s","4pps","AI","VMs","YouTube","Add"],"movies_tile_href":"movies.html","movies_tile_navigates":true,"discord_in_body":false,"welcome_text_ok":true},
+    "g_html": {"title":"Flint - G4m3s","heading":"G4m3s","placeholder":"Search g4m3s..."},
+    "a_html": {"title":"Flint - 4pps","heading":"4pps","placeholder":"Search 4pps..."},
+    "root": {"status":200,"title":"Flint"},
+    "window_html_regression": {"scramjetLoadController":"function","addressBar":true,"swRegistrations":1,"noSWBlockedText":true}
+  }
+}

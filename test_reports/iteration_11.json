@@ -1,0 +1,15 @@
+{
+  "summary": "Validated CALL + CHAT side-by-side layout on /pages/calling.html. All 5 acceptance criteria passed: (a) #stage flex-direction=row; (b) Jitsi iframe src contains vc.autistici.org/FlintGlobalLoungeX7q2; (c) #chatPane visible with iframe src ending in ch4t.html; (d) #fallback not shown; (e) chat toggle hides/shows #chatPane. Cross-frame chat interaction verified: gate visible, filled username 'CallUser1' via [data-testid='chat-username-input'], clicked [data-testid='chat-join'], sent 'Hello from call test' via [data-testid='chat-input']+[data-testid='chat-send'], message appeared in [data-testid='chat-messages']. Regressions passed: nt.html labels match ['G4m3s','M0v13s','C4ll','Mu51c','Ch4t','4pps','AI','YouTube','Add']; / returns 200 with <title>Flint</title>; standalone /pages/ch4t.html works (chat-input visible after stored username); /window.html after reload has typeof window.$scramjetLoadController === 'function'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "seed_data_creation": "Chat username 'CallUser1' saved via same-origin localStorage during test; message 'Hello from call test' posted to ntfy topic flint-ch4t-global-live-q9w3z.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "calling.html two-pane layout is stable. Jitsi loads inside iframe on vc.autistici.org. Chat pane is same-origin iframe of ch4t.html; access via page.frames filtering url includes 'ch4t.html'. Use wait_until='domcontentloaded'+ ~11s fixed wait for calling.html. For nt.html labels use selector .shortcut-label (not .label).",
+  "rca of the issue": "None. All primary tests passed on first attempt; a transient ERR_ABORTED on nt.html navigation (during initial combined run) was resolved by retrying with wait_until='load'. Selector mistake (.label vs .shortcut-label) was in my test script, not app code."
+}

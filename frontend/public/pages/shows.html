@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<script src="../guard.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liquidform - 5h0ws</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-start: #1a1a20; --bg-end: #0d0d12;
+      --panel-bg: rgba(30,30,36,0.6); --panel-hover: rgba(45,45,55,0.8);
+      --text: #fdfdfd; --text-soft: #a1a1aa; --pluto: #a5b4fc;
+      --border-light: rgba(255,255,255,0.06); --border-hover: rgba(255,255,255,0.15);
+      --shadow-soft: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+    body { min-height: 100vh; color: var(--text); background: radial-gradient(circle at top, var(--bg-start), var(--bg-end) 80%); background-color: var(--bg-end); overflow-x: hidden; padding: 40px 0 80px; }
+    .wrap { width: 100%; max-width: 1240px; margin: 0 auto; padding: 0 28px; }
+    .title { font-size: 2.4rem; font-weight: 700; }
+    .subtitle { color: var(--text-soft); margin-top: 4px; }
+
+    .hero { margin: 26px 0 30px; padding: 28px 26px; border-radius: 20px;
+      background: linear-gradient(135deg, rgba(255,225,0,0.14), rgba(30,30,36,0.65));
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-soft); }
+    .hero h2 { font-size: 1.4rem; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    .hero p { color: var(--text-soft); margin-bottom: 18px; max-width: 640px; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-size: 0.95rem; background: var(--pluto); color: #111; transition: transform 0.2s ease, background-color 0.2s ease; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn.secondary { background: rgba(255,255,255,0.08); color: var(--text); }
+    .btn.secondary:hover { background: rgba(255,255,255,0.16); }
+    .search { flex: 1; min-width: 200px; }
+    .search input { width: 100%; padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border-light); background: var(--panel-bg); color: var(--text); font-size: 0.95rem; outline: none; }
+    .search input:focus { border-color: var(--border-hover); }
+
+    .row { margin-bottom: 30px; }
+    .row-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .row-head h3 { font-size: 1.15rem; font-weight: 600; }
+    .rail { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; scroll-behavior: smooth; scrollbar-width: thin; }
+    .rail::-webkit-scrollbar { height: 8px; }
+    .rail::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 8px; }
+    .tile { flex: 0 0 auto; width: 150px; cursor: pointer; }
+    .poster { position: relative; width: 150px; height: 216px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-light); background: var(--panel-bg); transition: transform 0.2s ease, border-color 0.2s ease; }
+    .tile:hover .poster { transform: scale(1.05); border-color: var(--border-hover); }
+    .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .poster .play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35); opacity: 0; transition: opacity 0.2s ease; font-size: 1.6rem; }
+    .tile:hover .poster .play { opacity: 1; }
+    .tile .name { margin-top: 8px; font-size: 0.85rem; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .type-badge { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.65rem; padding: 3px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    /* Search results grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+    .grid .tile, .grid .poster { width: 100%; }
+    .grid .poster { height: 0; padding-bottom: 144%; }
+    .grid .poster img, .grid .poster .play { position: absolute; inset: 0; }
+
+    /* Player overlay */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(8,8,12,0.96); backdrop-filter: blur(12px); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+    .overlay.show { display: flex; }
+    .player-bar { width: 95vw; max-width: 1280px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 16px; }
+    .player-title { font-size: 1.15rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .player-actions { display: flex; gap: 12px; flex-shrink: 0; }
+    .player-actions button { background: var(--panel-bg); border: 1px solid var(--border-hover); color: var(--text); padding: 10px 20px; border-radius: 12px; font-weight: 600; cursor: pointer; }
+    .player-actions button:hover { background: var(--panel-hover); }
+    .player-frame { width: 95vw; max-width: 1280px; aspect-ratio: 16/9; max-height: 78vh; border: 1px solid var(--border-hover); border-radius: 16px; overflow: hidden; background: #000; }
+    .player-frame iframe { width: 100%; height: 100%; border: 0; }
+    .empty { color: var(--text-soft); margin: 40px 0; }
+  </style>
+    <link rel="stylesheet" href="../liquid-glass.css">
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="title">5h0ws</div>
+    <div class="subtitle">Free TV series &amp; movies on Pluto TV — tap to watch through the pr0xy</div>
+
+    <div class="hero" data-testid="pluto-hero">
+      <h2><i class="fa-solid fa-tv" style="color:var(--pluto)"></i> Pluto TV — free streaming</h2>
+      <p>Hundreds of shows &amp; movies, plus 250+ live channels. Loaded through the Liquidform pr0xy so it works even when Pluto is bl0ck3d.</p>
+      <div class="hero-actions">
+        <button class="btn" data-testid="pluto-open" data-url="https://pluto.tv/en/on-demand"><i class="fa-solid fa-play"></i> Open Pluto TV</button>
+        <button class="btn secondary" data-testid="pluto-live" data-url="https://pluto.tv/en/live-tv"><i class="fa-solid fa-satellite-dish"></i> Live TV</button>
+        <button class="btn secondary" id="shuffleBtn" data-testid="shows-shuffle"><i class="fa-solid fa-shuffle"></i> Shuffle</button>
+        <div class="search"><input type="text" id="searchInput" placeholder="Search shows &amp; movies..." autocomplete="off"></div>
+      </div>
+    </div>
+
+    <div id="rows"></div>
+    <div class="empty" id="emptyState" style="display:none;">No sh0ws found.</div>
+  </div>
+
+  <div class="overlay" id="overlay" data-testid="shows-player-overlay">
+    <div class="player-bar">
+      <div class="player-title" id="playerTitle" data-testid="shows-player-title"></div>
+      <div class="player-actions">
+        <button id="fsBtn" data-testid="shows-fullscreen-btn"><i class="fa-solid fa-expand"></i> Fullscreen</button>
+        <button id="closeBtn" data-testid="shows-close-btn"><i class="fa-solid fa-xmark"></i> Close</button>
+      </div>
+    </div>
+    <div class="player-frame" id="playerFrame"></div>
+  </div>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const rowsEl = $('#rows');
+    const emptyState = $('#emptyState');
+    const overlay = $('#overlay');
+    const playerFrame = $('#playerFrame');
+    const playerTitle = $('#playerTitle');
+    let cats = [];
+    let allItems = [];
+
+    const toProxied = (url) => {
+      try {
+        if (window.parent && window.parent !== window && window.parent.flintProxyEncode) {
+          const p = window.parent.flintProxyEncode(url);
+          if (p) return p;
+        }
+      } catch (e) {}
+      return url;
+    };
+
+    const openShow = (item) => {
+      playerTitle.textContent = item.name;
+      playerFrame.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.src = toProxied(item.url);
+      iframe.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write';
+      iframe.allowFullscreen = true;
+      iframe.dataset.testid = 'shows-player-iframe';
+      playerFrame.appendChild(iframe);
+      overlay.classList.add('show');
+    };
+    const closeShow = () => { overlay.classList.remove('show'); playerFrame.innerHTML = ''; };
+    $('#closeBtn').onclick = closeShow;
+    $('#fsBtn').onclick = () => $('#playerFrame').requestFullscreen?.();
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeShow(); });
+
+    document.querySelectorAll('.btn[data-url]').forEach(b =>
+      b.addEventListener('click', () => openShow({ name: 'Pluto TV', url: b.dataset.url }))
+    );
+
+    const shuffle = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+    const tileEl = (item) => {
+      const d = document.createElement('div');
+      d.className = 'tile';
+      d.dataset.testid = 'show-tile';
+      d.innerHTML = `
+        <div class="poster">
+          <span class="type-badge">${item.type === 'series' ? 'Series' : 'Movie'}</span>
+          <img loading="lazy" src="${item.image}" onerror="this.style.display='none'">
+          <div class="play"><i class="fa-solid fa-play"></i></div>
+        </div>
+        <div class="name">${item.name}</div>`;
+      d.addEventListener('click', () => openShow(item));
+      return d;
+    };
+
+    const renderRows = () => {
+      rowsEl.innerHTML = '';
+      emptyState.style.display = 'none';
+      shuffle(cats).forEach(cat => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.dataset.testid = 'show-row';
+        const head = document.createElement('div');
+        head.className = 'row-head';
+        head.innerHTML = `<h3>${cat.category}</h3>`;
+        const rail = document.createElement('div');
+        rail.className = 'rail';
+        shuffle(cat.items).slice(0, 20).forEach(it => rail.appendChild(tileEl(it)));
+        row.appendChild(head); row.appendChild(rail);
+        rowsEl.appendChild(row);
+      });
+    };
+
+    const renderSearch = (q) => {
+      const results = allItems.filter(m => m.name.toLowerCase().includes(q)).slice(0, 60);
+      rowsEl.innerHTML = '';
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      results.forEach(it => grid.appendChild(tileEl(it)));
+      rowsEl.appendChild(grid);
+      emptyState.style.display = results.length ? 'none' : 'block';
+    };
+
+    fetch('../data/pluto.json')
+      .then(r => r.json())
+      .then(data => {
+        cats = data;
+        const seen = new Set();
+        data.forEach(c => c.items.forEach(it => { if (!seen.has(it.url)) { seen.add(it.url); allItems.push(it); } }));
+        renderRows();
+      })
+      .catch(() => { emptyState.textContent = 'Failed to load sh0ws :('; emptyState.style.display = 'block'; });
+
+    $('#shuffleBtn').addEventListener('click', renderRows);
+
+    let t;
+    $('#searchInput').addEventListener('input', (e) => {
+      clearTimeout(t);
+      const q = e.target.value.toLowerCase().trim();
+      t = setTimeout(() => { q ? renderSearch(q) : renderRows(); }, 180);
+    });
+  </script>
+</body>
+
+</html>
