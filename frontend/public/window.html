@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<script src="guard.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquidform</title>
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="./engine/scramjet.all.js" defer></script>
+    
+    <script type="module">
+        import * as BareMux from "https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux@2.1.9/dist/index.mjs";
+        window.BareMux = BareMux;
+    </script>
+
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .cloak-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .cloak-opt { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); cursor: pointer;
+            transition: border-color 0.15s ease, background-color 0.15s ease; }
+        .cloak-opt:hover { background: rgba(255,255,255,0.07); }
+        .cloak-opt.active { border-color: var(--accent, #a5b4fc); background: rgba(165,180,252,0.12); }
+        .cloak-opt img { width: 22px; height: 22px; border-radius: 4px; background: #fff; }
+        .cloak-opt .co-none { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: #888; }
+        .cloak-opt span { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bm-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px;
+            border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); margin-bottom: 8px; cursor: pointer; }
+        .bm-item:hover { background: rgba(255,255,255,0.07); }
+        .bm-item .bm-title { font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bm-item .bm-url { font-size: 0.72rem; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bm-del { background: none; border: none; color: #e06c6c; cursor: pointer; flex-shrink: 0; padding: 6px; }
+        .bm-empty { color: #888; font-size: 0.9rem; padding: 8px 2px; }
+    </style>
+    <script src="./cloak.js"></script>
+    <script src="./custom-select.js" defer></script>
+    <script src="./script.js" defer></script>
+    <link rel="stylesheet" href="liquid-glass.css">
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <div class="wisp-settings-modal hidden" id="wisp-settings-modal">
+        <div class="settings-card">
+            
+            <div class="settings-header">
+                <h2><i class="fa-solid fa-sliders"></i> Liquidform Settings</h2>
+                <button class="close-btn" id="close-wisp-modal" aria-label="Close Settings">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="settings-body">
+                <nav class="settings-sidebar">
+                    <div class="sidebar-item active" data-pane="pane-network">
+                        <i class="fa-solid fa-network-wired"></i> Network
+                    </div>
+                    <div class="sidebar-item" data-pane="pane-search">
+                        <i class="fa-solid fa-magnifying-glass"></i> Search
+                    </div>
+                    <div class="sidebar-item" data-pane="pane-prefs">
+                        <i class="fa-solid fa-gear"></i> Preferences
+                    </div>
+                    <div class="sidebar-item" data-pane="pane-cloak">
+                        <i class="fa-solid fa-mask"></i> Cloak
+                    </div>
+                    <div class="sidebar-item" data-pane="pane-bookmarks">
+                        <i class="fa-solid fa-star"></i> Bookmarks
+                    </div>
+                    <div class="sidebar-item" data-pane="pane-history">
+                        <i class="fa-solid fa-clock-rotate-left"></i> History
+                    </div>
+                </nav>
+
+                <div class="settings-content">
+                    
+                    <div class="settings-pane" id="pane-network">
+                        <div class="section-title">C0nn3ction</div>
+                        <div class="wisp-option" style="cursor:default;">
+                            <div class="wisp-option-header">
+                                <div class="wisp-option-name"><i class="fa-solid fa-shield-halved" style="margin-right:8px"></i> Liquidform Network</div>
+                                <div class="server-status">
+                                    <span class="ping-text" id="net-ping">...</span>
+                                    <div class="status-indicator" id="net-dot"></div>
+                                </div>
+                            </div>
+                            <div class="wisp-option-url" id="net-detail">Checking connection...</div>
+                        </div>
+                        <div class="settings-label" style="margin:14px 2px;">
+                            <small>Servers are managed in the background and switched automatically if one slows down or goes offline.</small>
+                        </div>
+                        <button class="btn" id="net-refresh" style="width:auto;padding:10px 18px;"><i class="fa-solid fa-rotate" style="margin-right:8px"></i> Re-optimize connection</button>
+                    </div>
+
+                    <div class="settings-pane hidden" id="pane-search">
+                        <div class="settings-group">
+                            <div class="settings-row">
+                                <div class="settings-label">
+                                    <span>Search Engine</span>
+                                    <small>Choose your address bar search engine</small>
+                                </div>
+                                <select id="search-engine-select" class="settings-select" data-custom>
+                                    <option value="https://search.brave.com/search?q=">Brave</option>
+                                    <option value="https://www.google.com/search?q=">Google</option>
+                                    <option value="https://www.bing.com/search?q=">Bing</option>
+                                    <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-pane hidden" id="pane-prefs">
+                        <div class="settings-group">
+                            <div class="settings-row">
+                                <div class="settings-label">
+                                    <span>Startup Behavior</span>
+                                    <small>Create a new tab on launch</small>
+                                </div>
+                                <div class="toggle-switch active" id="startup-tab-toggle">
+                                    <div class="toggle-knob"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-pane hidden" id="pane-cloak">
+                        <div class="section-title">Tab Cloak</div>
+                        <div class="settings-label" style="margin-bottom:14px;"><small>Disguise this tab's name &amp; icon. Applies instantly and is remembered.</small></div>
+                        <div class="cloak-grid" id="cloak-list"></div>
+                    </div>
+
+                    <div class="settings-pane hidden" id="pane-bookmarks">
+                        <div class="section-title">Saved Bookmarks</div>
+                        <div class="server-list" id="bookmark-list"></div>
+                    </div>
+
+                    <div class="settings-pane hidden" id="pane-history">
+                        <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                            <span>Browsing History</span>
+                            <button id="clear-history-btn" data-testid="clear-history-btn" style="background:rgba(224,108,108,0.15);color:#e06c6c;border:1px solid rgba(224,108,108,0.3);padding:6px 14px;border-radius:10px;font-size:0.8rem;cursor:pointer;">Clear all</button>
+                        </div>
+                        <div class="server-list" id="history-list"></div>
+                    </div>
+
+                </div> </div> <div class="settings-footer">
+                Configuration saves automatically to local storage.
+            </div>
+        </div> </div>
+        </body>
+
+</html>

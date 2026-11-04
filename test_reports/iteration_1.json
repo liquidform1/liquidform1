@@ -1,0 +1,52 @@
+{
+  "summary": "Frontend-only smoke tests for Flint static proxy site. Verified static asset serving (HTTP + headers), service-worker registration on /window.html, and local JSON data-loading on games/apps/newtab/vm pages. Primary reported bug ('ServiceWorker script evaluation failed / does not allow Service Workers') is FIXED.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Live proxy browsing via address bar", "issue": "External wisp WebSocket servers (wss://web-launch-kit-6.preview.emergentagent.com/wisp/, wss://glseries.net/wisp/) return 404 / are unreachable from the container network. Per review request this is out of scope (third-party) and NOT a task failure, but end users on the preview URL cannot actually load proxied sites unless a reachable wisp server is configured in server list.", "affected_selectors": ["#address-bar", "#server-list"]},
+      {"flow": "Telemetry counter", "issue": "counter.leelive2021.workers.dev fetch blocked by CORS (No Access-Control-Allow-Origin). Non-blocking, cosmetic console error.", "affected_selectors": []}
+    ],
+    "design_issues": []
+  },
+  "test_evidence": {
+    "static_assets": {
+      "/ (index)": "200, title=Flint",
+      "/window.html": "200",
+      "/pages/g.html": "200",
+      "/pages/a.html": "200",
+      "/pages/nt.html": "200",
+      "/pages/vm.html": "200",
+      "/scramjet/scramjet.all.js": "200, content-type application/javascript",
+      "/scramjet/scramjet.sync.js": "200, content-type application/javascript",
+      "/scramjet/scramjet.wasm.wasm": "200, content-type application/wasm",
+      "/sw.js": "200, service-worker-allowed: /",
+      "/data/{games,apps,quotes,vm}.json": "200 application/json"
+    },
+    "window_html": {
+      "sw_block_error_text_present": false,
+      "serviceWorker_registrations": ["https://web-launch-kit-6.preview.emergentagent.com/"],
+      "ui_elements": {"addressBar": true, "tabsBar": true, "backBtn": true, "reloadBtn": true, "homeBtn": true, "welcomeModal": "Visible ('Welcome to Flint' + 'Join the Discord' + 'Continue to browser') in screenshot"}
+    },
+    "games_page": {"images_rendered": 65, "search_box": true, "note": "grid populated from local ../data/games.json"},
+    "apps_page": {"images_rendered": 10, "note": "grid populated from local ../data/apps.json"},
+    "newtab_page": {"json_parse_errors": 0},
+    "vm_page": {"images_rendered": 2, "vm_json_entries": 2, "note": "matches source data"}
+  },
+  "test_report_links": [],
+  "action_items": [
+    "OPTIONAL: In UI, add a data-testid or clearer id for the forward button (current selector heuristic did not find it, but back/reload/home/address-bar all detected). Not blocking.",
+    "OPTIONAL: Note in README that live proxy browsing requires a reachable wisp server; the bundled server list may need updating for end users."
+  ],
+  "critical_code_review_comments": [
+    "frontend/server.js correctly sets Service-Worker-Allowed: / for /sw.js and application/wasm for .wasm — good.",
+    "All previously-dead CDN references (scramjet CDN, GitHub raw JSON URLs) have been swapped to local paths as described in files_of_reference; verified via network + rendered image counts.",
+    "Static site has no data-testid attributes (third-party site hosted as-is) — acceptable per task context."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (no backend)", "frontend": "100% of in-scope checks"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Static site served by frontend/server.js from frontend/public. No /api routes exist. SW is registered at scope '/'. Live proxying through address bar depends on external wisp servers which are unreachable from this container — do not treat that as a task failure. All local data files (data/*.json) and scramjet assets are served correctly."
+}
