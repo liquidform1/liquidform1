@@ -1,0 +1,39 @@
+{
+  "summary": "Verified C4ll global video call fix: switched from meet.jit.si to vc.autistici.org. Iframe mounts vc.autistici.org/FlintGlobalLoungeX7q2, prejoin Join works, in-call toolbox visible, NO moderator/waiting gate. Console confirms 'Authentication enabled: false' and first joiner auto-promoted ('My role changed, new role: moderator'). All regressions (home 200/Flint, nt.html labels + call-tile, ch4t 'Join the chat' gate, window.html $scramjetLoadController) pass.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "calling.html: safety timeout to show fallback is 6000ms while main test waits ~11s — fine. Consider making TOOLBAR button set include 'tileview' only on desktop; low priority.",
+    "iframe src includes appData.localStorageContent=null — cosmetic; harmless.",
+    "vc.autistici.org is a smaller community server; note single-point-of-failure risk vs. meet.jit.si. Consider adding a secondary fallback host in future."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Call joins moderator-free on vc.autistici.org. First joiner is auto-moderator. In headless Chrome, camera/mic are fake devices; audio/video-muted join is expected. Verified iframe src, fallback link, prejoin join button click, toolbox presence, no gate keywords (EN+FR).",
+  "verification_evidence": {
+    "iframe_host_correct": true,
+    "iframe_room_correct": "FlintGlobalLoungeX7q2",
+    "fallback_shown": false,
+    "fallback_link": "https://vc.autistici.org/FlintGlobalLoungeX7q2",
+    "prejoin_join_clicked": true,
+    "in_call_toolbox_present": true,
+    "gate_keywords_found": [],
+    "console_authentication_enabled": false,
+    "auto_moderator_role_granted": true,
+    "nt_labels": ["G4m3s","M0v13s","C4ll","Mu51c","Ch4t","4pps","AI","YouTube","Add"],
+    "call_tile_href": "calling.html",
+    "home_status": 200,
+    "home_title": "Flint",
+    "chat_join_gate_visible": true,
+    "scramjet_load_controller_type": "function"
+  }
+}
