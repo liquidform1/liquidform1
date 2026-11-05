@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<script src="../guard.js"></script>
+  <meta charset="UTF-8">
+  <title>Liquidform - M0v13s</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient-start: #1a1a20;
+      --bg-gradient-end: #0d0d12;
+      --panel-bg: rgba(30, 30, 36, 0.6);
+      --panel-hover: rgba(45, 45, 55, 0.8);
+      --text: #fdfdfd;
+      --text-soft: #a1a1aa;
+      --accent: #a5b4fc;
+      --border-light: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.15);
+      --shadow-soft: 0 16px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top, var(--bg-gradient-start), var(--bg-gradient-end) 80%);
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--text);
+      overflow-x: hidden;
+      background-color: var(--bg-gradient-end);
+    }
+
+    #particles { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+
+    .loader {
+      position: fixed; inset: 0;
+      background: rgba(13, 13, 18, 0.9);
+      display: none; align-items: center; justify-content: center; z-index: 2000;
+    }
+    .loader.show { display: flex; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #ffffff; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .main-container {
+      display: flex; flex-direction: column; align-items: center;
+      width: 100%; max-width: 1100px; padding: 60px 20px; z-index: 10;
+    }
+
+    .title-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem; gap: 6px; }
+    .title { font-size: 3.2rem; font-weight: 700; letter-spacing: -0.02em; text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); }
+    .subtitle { font-size: 1.05rem; color: var(--text-soft); }
+
+    .search-card {
+      width: 100%; max-width: 540px; margin-bottom: 3rem;
+      border-radius: 40px; background: var(--panel-bg);
+      backdrop-filter: blur(16px); border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-soft); transition: all 0.3s ease;
+    }
+    .search-card:focus-within { border-color: var(--border-hover); transform: translateY(-2px); }
+    .search-box { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 24px; }
+    .search-box input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 1.1rem; padding: 6px 0; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 28px 20px;
+      width: 100%;
+    }
+
+    .card {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      cursor: pointer; text-decoration: none;
+      transition: transform 0.2s ease;
+    }
+    .card:hover { transform: translateY(-6px); }
+
+    .poster {
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      border-radius: 14px;
+      background: var(--panel-bg);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .card:hover .poster { border-color: var(--border-hover); box-shadow: 0 14px 30px rgba(0,0,0,0.5); }
+    .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .poster .play {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(13,13,18,0.35); opacity: 0; transition: opacity 0.25s ease; font-size: 2rem; color: #fff;
+    }
+    .card:hover .poster .play { opacity: 1; }
+
+    .card-label {
+      font-size: 0.85rem; color: var(--text-soft); font-weight: 500; text-align: center;
+      width: 100%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    .empty { color: var(--text-soft); margin-top: 40px; }
+
+    /* Player overlay */
+    .player-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(8, 8, 12, 0.96); backdrop-filter: blur(12px);
+      z-index: 1000; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .player-overlay.show { display: flex; }
+    .player-bar {
+      width: 95vw; max-width: 1280px; display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px; gap: 16px;
+    }
+    .player-title { font-size: 1.15rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .player-actions { display: flex; gap: 12px; flex-shrink: 0; }
+    .player-actions button {
+      background: var(--panel-bg); border: 1px solid var(--border-light); color: var(--text);
+      padding: 10px 20px; border-radius: 12px; font-weight: 600; cursor: pointer;
+      backdrop-filter: blur(10px); transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    .player-actions button:hover { background: var(--panel-hover); transform: scale(1.05); }
+    .player-frame {
+      width: 95vw; max-width: 1280px; aspect-ratio: 16 / 9; max-height: 78vh;
+      border: 1px solid var(--border-light); border-radius: 16px; overflow: hidden;
+      background: #000; box-shadow: var(--shadow-soft);
+    }
+    .player-frame iframe { width: 100%; height: 100%; border: 0; }
+
+    /* Tubi hero */
+    .tubi-hero {
+      width: 100%; max-width: 900px; margin: 0 auto 2.5rem; padding: 28px 26px;
+      border-radius: 20px; text-align: left;
+      background: linear-gradient(135deg, rgba(250,56,45,0.18), rgba(30,30,36,0.65));
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-soft);
+    }
+    .tubi-hero h2 { font-size: 1.4rem; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    .tubi-hero p { color: var(--text-soft); font-size: 0.95rem; margin-bottom: 18px; max-width: 620px; }
+    .tubi-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .tubi-btn {
+      display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 12px;
+      border: none; font-weight: 700; cursor: pointer; font-size: 0.95rem;
+      background: var(--accent); color: var(--accent-ink, #0b0b18); transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+    .tubi-btn:hover { transform: translateY(-2px); background: #c7d2fe; }
+    .tubi-btn.secondary { background: rgba(255,255,255,0.08); color: var(--text); }
+    .tubi-btn.secondary:hover { background: rgba(255,255,255,0.16); }
+    .section-label {
+      width: 100%; max-width: 1100px; margin: 0 auto 16px; text-align: left;
+      font-size: 1.05rem; font-weight: 600; color: var(--text);
+    }
+    .section-label span { color: var(--text-soft); font-weight: 400; font-size: 0.9rem; }
+  </style>
+    <link rel="stylesheet" href="../liquid-glass.css">
+</head>
+
+<body>
+  <canvas id="particles"></canvas>
+  <div class="loader" id="loader"><div class="spinner"></div></div>
+
+  <div class="main-container">
+    <div class="title-section">
+      <h1 class="title">M0v13s</h1>
+      <div class="subtitle">Popular movies — tap a poster to watch free on Tubi, through the pr0xy</div>
+    </div>
+
+    <div class="tubi-hero" data-testid="tubi-hero">
+      <h2><i class="fa-solid fa-clapperboard" style="color:var(--accent)"></i> Watch free movies on Tubi</h2>
+      <p>Thousands of real, popular movies &amp; shows — free with ads, loaded through the Liquidform pr0xy so it works even when Tubi is bl0ck3d.</p>
+      <div class="tubi-actions">
+        <button class="tubi-btn" data-testid="tubi-open" data-url="https://tubitv.com/home"><i class="fa-solid fa-play"></i> Open Tubi</button>
+        <button class="tubi-btn secondary" data-testid="tubi-movies" data-url="https://tubitv.com/movies"><i class="fa-solid fa-film"></i> Movies</button>
+        <button class="tubi-btn secondary" data-testid="tubi-tv" data-url="https://tubitv.com/tv-shows"><i class="fa-solid fa-tv"></i> TV Shows</button>
+      </div>
+    </div>
+
+    <div class="section-label" data-testid="popular-label" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <span id="popular-label-text">Discover free movies</span>
+      <button id="shuffleBtn" data-testid="shuffle-btn" class="tubi-btn secondary" style="padding:8px 16px;font-size:0.85rem;"><i class="fa-solid fa-shuffle"></i> Shuffle</button>
+    </div>
+
+    <div class="search-card">
+      <form class="search-box" id="searchForm" autocomplete="off" onsubmit="event.preventDefault();">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="Search thousands of movies..." autocomplete="off">
+      </form>
+    </div>
+
+    <div class="grid" id="movieList" data-testid="movies-grid"></div>
+    <div class="empty" id="emptyState" style="display:none;">No m0v13s found.</div>
+  </div>
+
+  <div class="player-overlay" id="playerOverlay" data-testid="movie-player-overlay">
+    <div class="player-bar">
+      <div class="player-title" id="playerTitle" data-testid="movie-player-title"></div>
+      <div class="player-actions">
+        <button id="fullscreenBtn" data-testid="movie-fullscreen-btn"><i class="fa-solid fa-expand"></i> Fullscreen</button>
+        <button id="closeBtn" data-testid="movie-close-btn"><i class="fa-solid fa-xmark"></i> Close</button>
+      </div>
+    </div>
+    <div class="player-frame" id="playerFrame"></div>
+  </div>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const searchInput = $('#searchInput');
+    const movieList = $('#movieList');
+    const emptyState = $('#emptyState');
+    const overlay = $('#playerOverlay');
+    const playerFrame = $('#playerFrame');
+    const playerTitle = $('#playerTitle');
+    let allMovies = [];
+
+    // Route through the Liquidform proxy (Scramjet) when running inside the proxy
+    // frame, so it works even when archive.org is blocked on the network.
+    const toProxied = (url) => {
+      try {
+        if (window.parent && window.parent !== window && window.parent.flintProxyEncode) {
+          const p = window.parent.flintProxyEncode(url);
+          if (p) return p;
+        }
+      } catch (e) {}
+      return url;
+    };
+
+    const openMovie = (movie) => {
+      playerTitle.textContent = movie.name;
+      playerFrame.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.src = toProxied(movie.url);
+      iframe.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
+      iframe.allowFullscreen = true;
+      iframe.setAttribute('webkitallowfullscreen', 'true');
+      iframe.dataset.testid = 'movie-player-iframe';
+      playerFrame.appendChild(iframe);
+      overlay.classList.add('show');
+    };
+
+    const closeMovie = () => {
+      overlay.classList.remove('show');
+      playerFrame.innerHTML = '';
+    };
+
+    // Generic proxied opener (used by the Tubi buttons)
+    const openUrl = (url, title) => {
+      playerTitle.textContent = title;
+      playerFrame.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.src = toProxied(url);
+      iframe.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write';
+      iframe.allowFullscreen = true;
+      iframe.dataset.testid = 'movie-player-iframe';
+      playerFrame.appendChild(iframe);
+      overlay.classList.add('show');
+    };
+
+    document.querySelectorAll('.tubi-btn[data-url]').forEach(b =>
+      b.addEventListener('click', () => openUrl(b.dataset.url, 'Tubi'))
+    );
+
+    $('#closeBtn').onclick = closeMovie;
+    $('#fullscreenBtn').onclick = () => $('#playerFrame').requestFullscreen?.();
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMovie(); });
+
+    function makeCard(movie) {
+      const a = document.createElement('a');
+      a.className = 'card';
+      a.href = '#';
+      a.dataset.testid = 'movie-card';
+      a.dataset.name = movie.name;
+      a.innerHTML = `
+        <div class="poster">
+          <img loading="lazy" src="${movie.image}"
+               onerror="this.parentElement.innerHTML='<div class=&quot;play&quot; style=&quot;opacity:1&quot;><i class=\\'fa-solid fa-film\\'></i></div>'">
+          <div class="play"><i class="fa-solid fa-play"></i></div>
+        </div>
+        <span class="card-label">${movie.name}</span>`;
+      a.addEventListener('click', e => { e.preventDefault(); openMovie(movie); });
+      return a;
+    }
+
+    function render(list) {
+      movieList.innerHTML = '';
+      list.forEach(m => movieList.appendChild(makeCard(m)));
+      emptyState.style.display = list.length ? 'none' : 'block';
+    }
+
+    const GRID_SIZE = 60;
+    const shuffle = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+    const showRotating = () => {
+      $('#popular-label-text').textContent = 'Discover free movies';
+      render(shuffle(allMovies).slice(0, GRID_SIZE));
+    };
+
+    // Full catalog (thousands of titles) is lazy-loaded on first search.
+    let fullCatalog = null, loadingCatalog = false;
+    const ensureCatalog = async () => {
+      if (fullCatalog || loadingCatalog) return;
+      loadingCatalog = true;
+      try {
+        const r = await fetch('../data/tubi_catalog.json');
+        fullCatalog = await r.json();
+      } catch (e) { fullCatalog = allMovies; }
+      loadingCatalog = false;
+    };
+
+    fetch('../data/movies.json')
+      .then(r => r.json())
+      .then(data => { allMovies = data; showRotating(); })
+      .catch(() => { emptyState.textContent = 'Failed to load m0v13s :('; emptyState.style.display = 'block'; });
+
+    $('#shuffleBtn').addEventListener('click', showRotating);
+
+    let searchTimer;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      const q = searchInput.value.toLowerCase().trim();
+      if (!q) { showRotating(); return; }
+      searchTimer = setTimeout(async () => {
+        await ensureCatalog();
+        const src = fullCatalog || allMovies;
+        const results = src.filter(m => m.name.toLowerCase().includes(q)).slice(0, 120);
+        $('#popular-label-text').textContent = `${results.length}${results.length === 120 ? '+' : ''} result${results.length === 1 ? '' : 's'} for "${searchInput.value.trim()}"`;
+        render(results);
+      }, 220);
+    });
+  </script>
+
+  <script>
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resize();
+    window.onresize = resize;
+    let particles = [];
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 1;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.4;
+        this.alpha = 0.1 + Math.random() * 0.2;
+      }
+      update() {
+        this.x += this.vx; this.y += this.vy;
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+      }
+      draw() {
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+        ctx.fill();
+      }
+    }
+    for (let i = 0; i < 50; i++) particles.push(new Particle());
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>

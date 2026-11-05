@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend-only regression on Flint static site: verified cloaking fix in /index.html and /window.html Settings, and AppOnFly URL update in /pages/vms.html. Reported bug (index.html hard-coding 'Google Drive') is FIXED — index.html now reads localStorage.flint_cloak via getCloak() and launchInCurrentTab()/setupCloak() apply the resolved preset title+icon. All 10 cloak options in Settings persist and update document.title live (classroom->'Home', gmail->'Inbox', none->'Flint'). Persistence across reload works. AppOnFly card data-url and iframe src both === 'https://app.apponfly.com/trial'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "index.html cloak after proxied page loads inside window.html iframe", "issue": "Scramjet/proxy overrides window.top document.title with the proxied page's title (e.g., 'Sign in - Google Accounts') AFTER user navigates within the cloaked iframe. Initial disguise from localStorage is applied correctly, but the cloak is not preserved once a proxied page finishes loading. This is a follow-up hardening item, not the originally-reported bug.", "affected_selectors": ["document.title on /index.html"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional hardening: keep the cloak title stable after proxied navigations by (a) setting a MutationObserver on window.top.document.title that re-applies the saved cloak, or (b) freezing document.title via Object.defineProperty after applyCloak. Not required to satisfy the current bug report."
+  ],
+  "critical_code_review_comments": [
+    "index.html duplicates the CLOAKS map already defined in script.js. Consider a shared module or single source of truth to avoid drift (e.g., adding a new preset in one place and not the other).",
+    "index.html's launchInCurrentTab() sets document.title once but doesn't re-apply after the internal iframe (window.html) loads proxied content — see integration_issue above.",
+    "getCloak() default fallback in index.html is CLOAKS.drive; script.js initCloak defaults to 'none'. Inconsistent default cloak between the two entry points."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100% for in-scope items"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Static site at REACT_APP_BACKEND_URL. Cloak state lives in localStorage key 'flint_cloak' (keys: none, classroom, docs, drive, slides, gmail, clever, canvas, wikipedia, khan). Use page.evaluate to set localStorage before navigating; call window-level launchInCurrentTab() directly (it is a top-level function declaration in /index.html). Note: after the cloaked iframe navigates inside the proxy, the tab title gets replaced by the proxied page's title — verify cloak BEFORE any proxy navigation.",
+  "rca of the issue": "Original bug: /index.html had 'Google Drive' hard-coded into launchInCurrentTab/setupCloak, so Settings-selected cloaks in window.html never influenced the visible tab. Fix: added CLOAKS map + getCloak() reading localStorage.flint_cloak; launchInCurrentTab() and setupCloak() now apply the resolved preset. Also script.js applyCloak was updated to also write to window.top.document so the visible tab (index.html) reflects live Settings changes when Flint runs inside the cloak iframe. Both flows verified via Playwright."
+}

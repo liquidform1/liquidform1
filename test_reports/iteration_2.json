@@ -1,0 +1,20 @@
+{
+  "summary": "Frontend-only verification of Flint static site (iteration 2). PRIMARY BUG FIX VERIFIED: After reloading /window.html (with SW already active), window.$scramjetLoadController is typeof 'function', no 'does not allow Service Workers' banner, no '$scramjetLoadController is not defined' text, #address-bar exists, tab bar + nav buttons (#tabs-container, #back-btn, #fwd-btn, #reload-btn, #home-btn-nav, #devtools-btn, #wisp-settings-btn) render, and navigator.serviceWorker.getRegistrations().length == 1. Engine assets serve correctly with proper MIME types (/engine/scramjet.all.js and scramjet.sync.js as application/javascript, /engine/scramjet.wasm.wasm as application/wasm, all 200). Landing / returns 200 with <title>Flint</title>. Data pages populate: g.html (65 game tiles), a.html (10 apps), vm.html (Ubuntu + Windows XP), nt.html quotes render (e.g., 'Stopping SlowGuardian'). Welcome modal on nt.html correctly reads 'Welcome! Search the web or jump into games, apps, AI and more.' No visible 'Discord' text/button/shortcut tile on nt.html. Third-party wisp websocket errors observed (counter.leelive2021, glseries.net) are expected per test note (external servers unreachable) and did NOT affect in-scope checks.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "pages/nt.html", "issues": ["Dead CSS leftover after Discord removal: <style> block still contains '--discord: #5865F2;' CSS variable and orphan '.discord-btn' rules. Not rendered anywhere (no visible Discord text, button, or shortcut tile), but 4 case-insensitive 'discord' string matches exist inside the <style> tag's text content. If strict interpretation of 'no discord text anywhere in the DOM' is required, remove the unused CSS variable and .discord-btn ruleset from pages/nt.html <style>."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": ["OPTIONAL cleanup: remove unused '--discord' CSS variable and orphan '.discord-btn' style rules from frontend/public/pages/nt.html <style> block (no visible impact, cosmetic dead code)."],
+  "critical_code_review_comments": ["Primary reported bug ('$scramjetLoadController is not defined' after reload) is fully resolved by moving engine files to /engine/ outside the /scramjet/ SW virtual prefix. Post-reload assertions all pass. Engine MIME types are correct.", "Dead CSS references to Discord remain in nt.html — non-functional but should be pruned for hygiene."],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100% for in-scope checks"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The critical repro is: navigate to /window.html, wait ~4s for SW to install, then page.reload() and wait ~5s. Check typeof window.$scramjetLoadController === 'function' and navigator.serviceWorker.getRegistrations().length >= 1. Use wait_until='domcontentloaded' (particles/background network keeps 'networkidle' from ever firing). Discord removal check should scope to visible DOM text (document.body.innerText) — nt.html body innerText contains no 'discord'; only <style> block CSS variables/rulesets do. The apps page (/pages/a.html) legitimately shows a 'Discord' app tile from apps.json (out of scope for the removal requirement which targeted nt.html only)."
+}

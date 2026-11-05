@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquidform</title>
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-gradient-start: #141417;
+            --bg-gradient-end: #09090b;
+            --panel-bg: rgba(24, 24, 27, 0.6);
+            --text: #fafafa;
+            --text-soft: #a1a1aa;
+            --border-light: rgba(255, 255, 255, 0.04);
+            --shadow-soft: 0 16px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%; 
+            overflow: hidden; 
+            background: radial-gradient(circle at top, var(--bg-gradient-start), var(--bg-gradient-end) 80%) no-repeat fixed;
+            color: var(--text); 
+            font-family: 'Inter', sans-serif;
+        }
+        
+        #particles-js {
+            position: fixed; width: 100%; height: 100%;
+            z-index: 1;
+            transition: opacity 0.5s ease;
+            pointer-events: none; 
+        }
+
+        #main-frame { 
+            display: none; 
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none;
+            z-index: 10; 
+        }
+
+        #init-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+
+        #init-overlay.active { display: flex; opacity: 1; }
+
+        .init-box { 
+            background: var(--panel-bg);
+            border: 1px solid var(--border-light);
+            padding: 40px;
+            border-radius: 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: var(--shadow-soft);
+            transform: scale(0.95);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popIn {
+            to { transform: scale(1); }
+        }
+
+        .title {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: var(--text-soft);
+            line-height: 1.5;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px auto;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-light);
+            color: var(--text);
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+    </style>
+    <link rel="stylesheet" href="liquid-glass.css">
+    <script src="cloak.js"></script>
+</head>
+<body>
+    <div id="particles-js"></div>
+    
+    <div id="init-overlay">
+        <div class="init-box">
+            <img src="images/logo.png" alt="Liquidform" width="96" height="96" style="border-radius:24px;margin-bottom:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)">
+            <h2 class="title">Liquidform</h2>
+            <p class="subtitle" id="launch-text">Liquidform opens in a cloaked tab.<br>Press the button to open it.</p>
+
+            <div class="button-group" id="action-buttons">
+                <button class="btn btn-primary" id="launch-btn" onclick="forceLaunch()">Open Cloaked</button>
+            </div>
+        </div>
+    </div>
+
+   <!-- The app frame stays empty until this is the cloaked tab. -->
+   <iframe id="main-frame" data-src="window.html" sandbox="allow-scripts allow-forms allow-same-origin allow-modals allow-popups allow-downloads"></iframe>
+
+    <script>
+        // Confirm-before-close guard for the real app tab .
+        function enableLeaveGuard(w) {
+            try {
+                w.addEventListener('beforeunload', function (e) {
+                    e.preventDefault();
+                    e.returnValue = 'Are you sure you want to leave?';
+                    return 'Are you sure you want to leave?';
+                });
+            } catch (e) {}
+        }
+
+        // App mode: this page is the top-level page of a tab opened by the button
+        // (index.html?cloaked=true), not a frame inside something else.
+        function inCloakedTab() {
+            return window.top === window && new URLSearchParams(window.location.search).has('cloaked');
+        }
+
+        function showApp() {
+            const frame = document.getElementById('main-frame');
+            if (!frame.getAttribute('src')) frame.setAttribute('src', frame.dataset.src);
+            frame.style.display = 'block';
+            document.getElementById('init-overlay').style.display = 'none';
+            document.getElementById('particles-js').style.opacity = '0.1';
+        }
+
+        function setLauncherMessage(html) {
+            document.getElementById('launch-text').innerHTML = html;
+        }
+
+        function startParticles() {
+            try { particlesJS('particles-js', {
+                "particles": {
+                    "number": { "value": 50, "density": { "enable": true, "value_area": 1200 } },
+                    "color": { "value": "#ffffff" },
+                    "shape": { "type": "circle" },
+                    "opacity": { "value": 0.2, "random": true },
+                    "size": { "value": 2, "random": true },
+                    "line_linked": { "enable": false },
+                    "move": { "enable": true, "speed": 1.2, "direction": "none", "random": true, "straight": false, "out_mode": "out" }
+                },
+                "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": false } } },
+                "retina_detect": true
+            }); } catch (e) { /* decorative only */ }
+        }
+
+        // The background library loads in the background and can never block the page.
+        function loadParticles() {
+            try {
+                var s = document.createElement('script');
+                s.async = true;
+                s.src = 'https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js';
+                s.onload = startParticles;
+                s.onerror = function () {};
+                document.head.appendChild(s);
+            } catch (e) {}
+        }
+
+        function boot() {
+            loadParticles();
+
+            const params = new URLSearchParams(window.location.search);
+
+            if (inCloakedTab()) {
+                // The cloaked tab: apply the tab title/icon and load the app.
+                try { Cloak.init(); } catch (e) {}
+                try { enableLeaveGuard(window); } catch (e) {}
+                showApp();
+            } else {
+                // Any other visit (including framed copies) only shows the launcher button.
+                document.getElementById('init-overlay').classList.add('active');
+            }
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+
+        // Launch must come from a click: browsers block window.open() without a user gesture,
+        // which is why the old auto-launch often did nothing on hosted deployments.
+        function forceLaunch() {
+            const base = window.location.origin + window.location.pathname;
+            const win = window.open(base + '?cloaked=true', '_blank');
+            if (!win || win.closed || typeof win.closed === 'undefined') {
+                setLauncherMessage("Your browser blocked the new tab.<br><br><span style='color:#fafafa;font-weight:500;'>Allow pop-ups for this site, then press the button again.</span>");
+                document.getElementById('launch-btn').textContent = 'Try again';
+                return;
+            }
+            // Move this original tab somewhere harmless.
+            window.location.replace('https://classroom.google.com');
+        }
+    </script>
+</body>
+</html>
