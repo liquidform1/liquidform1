@@ -1,3 +1,0 @@
-# Liquidform
-
-See DEPLOY.md.
